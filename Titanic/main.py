@@ -1,127 +1,128 @@
-import sys
+import argparse
+from load_data import load_data
 
-def load_data():
-    """
-    Load sample data representing ships and their countries.
-    This function serves as a placeholder for a real database or API call.
-    """
-    return {
-        "ships": [
-            {"name": "Titanic", "country": "United Kingdom"},
-            {"name": "Olympic", "country": "United Kingdom"},
-            {"name": "Lusitania", "country": "United States"},
-            {"name": "Aquitania", "country": "United Kingdom"},
-            {"name": "Bismarck", "country": "Germany"}
-        ]
-    }
+def calculate_column_widths(rows, headers, max_width):
+    all_rows = [headers] + rows
+    return [
+        min(max(len(str(row[col_index])) for row in all_rows), max_width)
+        for col_index in range(len(headers))
+    ]
 
-# functions
+def truncate(text, width):
+    return text if len(text) <= width else text[:width - 3] + "..."
+
+def format_table(rows, headers, max_width=20):
+    """
+    Formatiert eine Tabelle für die Anzeige mit Text.
+    """
+
+    column_widths = calculate_column_widths(rows, headers, max_width)
+    header_row = " | ".join(
+        truncate(str(headers[col_index]), column_widths[col_index]).ljust(column_widths[col_index]) for col_index in
+        range(len(headers)))
+    separator = "-+-".join("-" * column_widths[col_index] for col_index in range(len(headers)))
+    data_rows = "\n".join(
+        " | ".join(
+            truncate(str(row[col_index]), column_widths[col_index]).ljust(column_widths[col_index]) for col_index in
+            range(len(headers)))
+        for row in rows
+    )
+    return f"{header_row}\n{separator}\n{data_rows}"
+
+# Command Functions
+def print_welcome_message():
+    """
+    Gibt eine Willkommensnachricht aus.
+    """
+    print("Welcome to the Ships CLI! Enter 'help' to view available commands.")
+
+
 def help_command():
     """
-    Display the list of available commands and their descriptions.
-    Provides guidance on how to use the application.
+    Zeigt die verfügbaren Befehle an.
     """
-    print("""
+    print(
+        """
 Available commands:
-  help                - Displays this help message with available commands.
+  help                - Displays this help message.
   show_countries      - Shows a list of unique ship countries in alphabetical order.
-  show_all_countries  - Shows all countries of the ships, including duplicates.
-  show_names          - Displays the names of all ships.
-  count_ships         - Displays the total number of ships.
   top_countries <n>   - Displays the top <n> countries with the most ships.
-    """)
+  exit                - Exits the CLI.
+        """
+    )
 
-def count_ships(all_data):
+def count_by_country(data):
     """
-    Print the total number of ships in the dataset.
+    Zählt die Schiffe nach Ländern und gibt ein Dictionary zurück.
     """
-    print(f"Total number of ships: {len(all_data['ships'])}")
+    country_counts = {}
+    for ship in data.get("ships", []):
+        country = ship["country"]
+        country_counts[country] = country_counts.get(country, 0) + 1
+    return country_counts
 
-def show_all_countries(all_data):
+def show_countries(data):
     """
-    Print all the countries of the ships, including duplicates.
+    Zeigt eine Liste der einzigartigen Länder sortiert nach Alphabet.
     """
-    print("Countries of all ships (including duplicates):")
-    for ship in all_data['ships']:
-        print(f"- {ship['country']}")
-
-def show_countries(all_data):
-    """
-    Display a list of unique ship countries sorted alphabetically.
-    Uses a set to eliminate duplicate countries.
-    """
-    unique_countries = sorted(set(ship['country'] for ship in all_data['ships']))
+    if not data.get("data"):
+        print("Keine Daten verfügbar.")
+        return
+    unique_countries = sorted(set(ship["country"] for ship in data))
     print("Countries of ships:")
     for country in unique_countries:
         print(f"- {country}")
 
-def show_ship_names(all_data):
-    """
-    Display the names of all ships in the dataset.
-    Iterates through the list of ships and prints each name.
-    """
-    print("Ship names:")
-    for ship in all_data['ships']:
-        print(f"- {ship['name']}")
 
-def top_countries(all_data, num_countries):
+def top_countries(data, num_countries):
     """
-    Display the top `num_countries` with the highest number of ships.
-    Counts ships by country and sorts them in descending order.
-    Args:
-        all_data (dict): Dataset containing ship information.
-        num_countries (int): Number of top countries to display.
+    Zeigt die Top-Länder mit den meisten Schiffen an.
     """
-    # Count ships per country
-    country_counts = {}
-    for ship in all_data['ships']:
-        country = ship['country']
-        country_counts[country] = country_counts.get(country, 0) + 1
-
-    # Sort countries by ship count (descending)
-    sorted_counts = sorted(country_counts.items(), key=lambda x: x[1], reverse=True)
-
-    print(f"Top {num_countries} countries with the most ships:")
-    for country, count in sorted_counts[:num_countries]:
-        print(f"- {country}: {count}")
-
-def main():
-    """
-    Main function to handle command-line interface logic.
-    Reads commands from the user and performs corresponding actions.
-    """
-    # Load data from external file
-    all_data = load_data()
-
-    # Check if a command is provided
-    if len(sys.argv) < 2:
-        print("Welcome to the Ships CLI! Enter 'help' to view available commands.")
+    country_counts = count_by_country(data)
+    if not country_counts:
+        print("Keine Daten verfügbar.")
         return
 
-    # Extract and process the command
-    command = sys.argv[1].lower()
+    sorted_counts = sorted(country_counts.items(), key=lambda x: x[1], reverse=True)
+    table = format_table(sorted_counts[:num_countries], headers=("Country", "Ships"))
+    print(f"Top {num_countries} countries with the most ships:")
+    print(table)
 
-    # Handle commands
-    if command == "help":
-        help_command()
-    elif command == "show_countries":
-        show_countries(all_data)
-    elif command == "show_all_countries":
-        show_all_countries(all_data)
-    elif command == "show_names":
-        show_ship_names(all_data)
-    elif command == "count_ships":
-        count_ships(all_data)
-    elif command == "top_countries":
-        # Ensure a valid number argument is provided
-        if len(sys.argv) < 3 or not sys.argv[2].isdigit():
-            print("Error: Please provide a valid number. Example: top_countries 3")
-        else:
-            top_countries(all_data, int(sys.argv[2]))
-    else:
-        # Handle unknown commands
-        print(f"Error: Unknown command '{command}'. Enter 'help' to view available commands.")
 
-# Main entry point
+# Main Function
+def main():
+    """
+    Hauptfunktion zur Steuerung der Benutzerinteraktion.
+    """
+    parser = argparse.ArgumentParser(description="Ships CLI Tool")
+    parser.add_argument("--file", type=str, default="ships_data.json", help="Pfad zur JSON-Datei mit den Schiffs-Daten")
+    args = parser.parse_args()
+
+    data = load_data(args.file)
+    print_welcome_message()
+
+    while True:
+        try:
+            command = input("\nEnter a command (or 'help' to view commands): ").strip().lower()
+            if command == "help":
+                help_command()
+            elif command == "show_countries":
+                show_countries(data)
+            elif command.startswith("top_countries"):
+                parts = command.split()
+                if len(parts) == 2 and parts[1].isdigit():
+                    top_countries(data, int(parts[1]))
+                else:
+                    print("Error: Ungültige Eingabe. Beispiel: top_countries 3")
+            elif command == "exit":
+                print("Exiting the CLI. Goodbye!")
+                break
+            else:
+                print(f"Error: Unknown command '{command}'. Enter 'help' to view available commands.")
+        except KeyboardInterrupt:
+            print("\nExiting the CLI. Goodbye!")
+            break
+
+
 if __name__ == "__main__":
     main()
