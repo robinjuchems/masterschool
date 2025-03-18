@@ -1,85 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mein Blog</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Mein Blog</h1>
-        {% if view != 'index' %}
-            <nav>
-                <a href="{{ url_for('index') }}">Zurück zur Startseite</a>
-            </nav>
-        {% endif %}
-    </header>
-    <main>
-        {% if view == 'index' %}
-            <nav>
-                <a href="{{ url_for('add') }}">Neuen Beitrag hinzufügen</a>
-            </nav>
-            <h2>Alle Beiträge</h2>
+    <h1>Mein Blog</h1>
+
+    {% if view == 'list' %}
+        <h2>Alle Beiträge</h2>
+        <ul>
             {% for post in posts %}
-                <article>
-                    <h3>{{ post.title }}</h3>
-                    <p class="author">Von: {{ post.author }}</p>
-                    <p>{{ post.content[:100] }}...
-                        <a href="#">Mehr lesen</a>
-                    </p>
-                    <a href="{{ url_for('update', post_id=post.id) }}" class="update-btn">Bearbeiten</a>
-                    <a href="{{ url_for('delete', post_id=post.id) }}"
-                       class="delete-btn"
-                       onclick="return confirm('Möchtest du diesen Beitrag wirklich löschen?');">
-                       Löschen
-                    </a>
-                </article>
-            {% endfor %}
-            {% if not posts %}
-                <p>Noch keine Beiträge vorhanden!</p>
-            {% endif %}
-
-        {% elif view == 'add' %}
-            <h2>Neuen Beitrag hinzufügen</h2>
-            <form method="POST" action="{{ url_for('add') }}">
-                <div>
-                    <label for="author">Autor:</label><br>
-                    <input type="text" id="author" name="author" required>
-                </div>
-                <div>
-                    <label for="title">Titel:</label><br>
-                    <input type="text" id="title" name="title" required>
-                </div>
-                <div>
-                    <label for="content">Inhalt:</label><br>
-                    <textarea id="content" name="content" rows="5" required></textarea>
-                </div>
-                <div>
-                    <button type="submit">Beitrag hinzufügen</button>
-                </div>
-            </form>
-
-        {% elif view == 'update' %}
-            <h2>Beitrag bearbeiten</h2>
-            <form action="{{ url_for('update', post_id=post.id) }}" method="POST">
-                <div>
-                    <label for="author">Autor:</label><br>
-                    <input type="text" id="author" name="author" value="{{ post.author }}" required>
-                </div>
-                <div>
-                    <label for="title">Titel:</label><br>
-                    <input type="text" id="title" name="title" value="{{ post.title }}" required>
-                </div>
-                <div>
-                    <label for="content">Inhalt:</label><br>
-                    <textarea id="content" name="content" rows="5" required>{{ post.content }}</textarea>
-                </div>
-                <div>
-                    <input type="submit" value="Beitrag aktualisieren">
-                </div>
-            </form>
-        {% endif %}
-    </main>
+                <li>
+                    <strong>{{ post.title }}</strong> - {{post.content}}
+                    <a href="{{ url_for('delete', post_id=post.id) }}">Löschen</a>
+                </li>
+            {% end for %}
+        </ul>
+        <a href="{{ url_for('add') }}">Neuen Beitrag hinzufügen</a>
+    {% elif view == 'add' %}
+        <h2>Neuen Beitrag hinzufügen</h2>
+        <form method="post" action="{{ url_for('add') }}">
+            <label for="title">Titel:</label>
+            <input type="text" name="title" id="title" required>
+            <br>
+            <label for="content">Inhalt:</label>
+            <textarea name="content" id="content" required></textarea>
+            <br>
+            <input type="submit" value="Hinzufügen">
+        </form>
+        <a href="{{ url_for('index') }}">Zurück zur Liste</a>
+    {% endif %}
 </body>
 </html>

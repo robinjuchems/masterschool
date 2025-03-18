@@ -3,29 +3,35 @@ import json
 
 app = Flask(__name__)
 
+# Funktion zum Laden der Posts aus posts.json
 def get_posts():
     try:
-        with open('posts.json', 'r') as file:
-            return json.load(file)
+        with open('posts.json', 'r') as f:
+            return json.load(f)
     except FileNotFoundError:
         return []
 
+# Funktion zum Speichern der Posts in posts.json
 def save_posts(posts):
-    with open('posts.json', 'w') as file:
-        json.dump(posts, file, indent=4)
+    with open('posts.json', 'w') as f:
+        json.dump(posts, f, indent=4)
 
-def fetch_post_by_id(post_id):
-    posts = get_posts()
-    for post in posts:
-        if post['id'] == post_id:
-            return post
-    return None
-
-@app.route('/', methods=['GET'])
+# Route: Alle Beiträge anzeigen (Index)
+@app.route('/')
 def index():
-    blog_posts = get_posts()
-    return render_template('index.html', view='index', posts=blog_posts)
+    posts = get_posts()
+    return render_template('index.html', view='index', posts=posts)
 
+# Route: Einzelnen Beitrag anzeigen
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    posts = get_posts()
+    post = next((p for p in posts if p['id'] == post_id), None)
+    if post is None:
+        return redirect(url_for('index'))
+    return render_template('index.html', view='post', post=post)
+
+# Route: Neuen Beitrag hinzufügen
 @app.route('/add', methods=['GET', 'POST'])
 def add():
     if request.method == 'POST':
@@ -33,36 +39,37 @@ def add():
         new_id = max([post['id'] for post in posts], default=0) + 1
         new_post = {
             'id': new_id,
-            'author': request.form.get('author'),
-            'title': request.form.get('title'),
-            'content': request.form.get('content')
+            'author': request.form['author'],
+            'title': request.form['title'],
+            'content': request.form['content']
         }
         posts.append(new_post)
         save_posts(posts)
         return redirect(url_for('index'))
     return render_template('index.html', view='add')
 
-@app.route('/delete/<int:post_id>')
-def delete(post_id):
-    posts = get_posts()
-    posts = [post for post in posts if post['id'] != post_id]
-    save_posts(posts)
-    return redirect(url_for('index'))
-
+# Route: Beitrag aktualisieren
 @app.route('/update/<int:post_id>', methods=['GET', 'POST'])
 def update(post_id):
     posts = get_posts()
-    post = fetch_post_by_id(post_id)
+    post = next((p for p in posts if p['id'] == post_id), None)
     if post is None:
-        return "Post not found", 404
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        post['author'] = request.form.get('author')
-        post['title'] = request.form.get('title')
-        post['content'] = request.form.get('content')
-        posts = [p if p['id'] != post_id else post for p in posts]
+        post['author'] = request.form['author']
+        post['title'] = request.form['title']
+        post['content'] = request.form['content']
         save_posts(posts)
         return redirect(url_for('index'))
     return render_template('index.html', view='update', post=post)
 
+# Route: Beitrag löschen
+@app.route('/delete/<int:post_id>')
+def delete(post_id):
+    posts = get_posts()
+    posts = [p for p in posts if p['id'] != post_id]
+    save_posts(posts)
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)

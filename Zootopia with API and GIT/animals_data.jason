@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Lion",
+        "characteristics": {
+            "diet": "Carnivore",
+            "type": "Mammal"
+        },
+        "locations": ["Africa"]
+    },
+    {
+        "name": "Elephant",
+        "characteristics": {
+            "diet": "Herbivore",
+            "type": "Mammal"
+        },
+        "locations": ["Africa", "Asia"]
+    }
+]

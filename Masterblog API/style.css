@@ -1,77 +1,107 @@
-body {
-    font-family: Arial, sans-serif;
+/* Reset default browser styles for consistent rendering */
+* {
     margin: 0;
-    padding: 20px;
-    background-color: #f5f5f5;
+    padding: 0;
+    box-sizing: border-box;
 }
 
+/* Set base font and background for the body */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Header styling */
 header {
     background-color: #333;
     color: white;
     padding: 10px 20px;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 header h1 {
     margin: 0;
-    display: inline-block;
-}
-
-nav {
-    float: right;
-    padding-top: 10px;
+    font-size: 24px;
 }
 
 nav a {
     color: white;
     text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 3px;
 }
 
+nav a:hover {
+    background-color: #555;
+}
+
+/* Main content area */
 main {
     max-width: 800px;
     margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
+/* Article styling for blog posts */
 article {
     margin-bottom: 20px;
-    padding: 15px;
+    padding-bottom: 15px;
     border-bottom: 1px solid #ddd;
-    background-color: white;
 }
 
-.author {
-    color: #666;
+article h3 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+article p.author {
     font-style: italic;
+    color: #666;
+    margin-bottom: 10px;
 }
 
-.delete-btn {
-    color: #ff0000;
-    text-decoration: none;
-    margin-left: 10px;
+article p {
+    margin-bottom: 10px;
+}
+
+/* Buttons for update and delete */
+.update-btn, .delete-btn {
+    display: inline-block;
     padding: 5px 10px;
-    border: 1px solid #ff0000;
+    margin-right: 10px;
+    text-decoration: none;
     border-radius: 3px;
-}
-
-.delete-btn:hover {
-    background-color: #ff0000;
-    color: white;
+    font-size: 14px;
 }
 
 .update-btn {
-    color: #0066cc;
-    text-decoration: none;
-    margin-left: 10px;
-    padding: 5px 10px;
-    border: 1px solid #0066cc;
-    border-radius: 3px;
-}
-
-.update-btn:hover {
     background-color: #0066cc;
     color: white;
 }
 
+.update-btn:hover {
+    background-color: #005bb5;
+}
+
+.delete-btn {
+    background-color: #ff0000;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #e60000;
+}
+
+/* Form styling */
 form div {
     margin-bottom: 15px;
 }
@@ -79,13 +109,19 @@ form div {
 label {
     display: block;
     margin-bottom: 5px;
+    font-weight: bold;
 }
 
-input[type="text"],
-textarea {
+input[type="text"], textarea {
     width: 100%;
     padding: 8px;
-    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 16px;
+}
+
+textarea {
+    resize: vertical;
 }
 
 button, input[type="submit"] {
@@ -95,8 +131,25 @@ button, input[type="submit"] {
     border: none;
     border-radius: 3px;
     cursor: pointer;
+    font-size: 16px;
 }
 
 button:hover, input[type="submit"]:hover {
     background-color: #555;
+}
+
+/* Responsive design adjustments */
+@media (max-width: 600px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav {
+        margin-top: 10px;
+    }
+
+    main {
+        padding: 10px;
+    }
 }

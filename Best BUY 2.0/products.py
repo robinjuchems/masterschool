@@ -84,3 +84,4 @@ class LimitedProduct(Product):
         if self.promotion:
             return self.promotion.apply_promotion(self, quantity)
         return quantity * self.price
+

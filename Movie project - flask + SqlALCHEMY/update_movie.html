@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Film bearbeiten{% endblock %}
+{% block content %}
+    <h1>Film bearbeiten</h1>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">Titel</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ movie.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="director" class="form-label">Regisseur</label>
+            <input type="text" class="form-control" id="director" name="director" value="{{ movie.director or '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="year" class="form-label">Jahr</label>
+            <input type="number" class="form-control" id="year" name="year" value="{{ movie.year or '' }}">
+        </div>
+        <div class="mb-3">
+            <label for="rating" class="form-label">Bewertung</label>
+            <input type="number" step="0.1" class="form-control" id="rating" name="rating" value="{{ movie.rating or '' }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Speichern</button>
+    </form>
+{% endblock %}

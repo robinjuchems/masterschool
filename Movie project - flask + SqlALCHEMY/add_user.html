@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Benutzer hinzufügen{% endblock %}
+{% block content %}
+    <h1>Neuen Benutzer hinzufügen</h1>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Hinzufügen</button>
+    </form>
+{% endblock %}

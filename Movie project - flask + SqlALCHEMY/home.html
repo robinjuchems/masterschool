@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Startseite{% endblock %}
+{% block content %}
+    <h1>Willkommen bei MoviWeb!</h1>
+    <p>Verwalte deine Lieblingsfilme einfach und schnell.</p>
+    <a href="{{ url_for('list_users') }}" class="btn btn-primary">Zu den Benutzern</a>
+{% endblock %}

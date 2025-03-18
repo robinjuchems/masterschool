@@ -1,10 +1,10 @@
 {
-    "Titanic": {
-        "year": 1990,
-        "rating": 9
+    "Inception": {
+        "year": 2010,
+        "rating": 8.8
     },
-    "The Dark Knight": {
-        "year": 2006,
-        "rating": 5
+    "Der Pate": {
+        "year": 1972,
+        "rating": 9.2
     }
 }

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ username }}'s Filme{% endblock %}
+{% block content %}
+    <h1>{{ username }}'s Lieblingsfilme</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th>Regisseur</th>
+                <th>Jahr</th>
+                <th>Bewertung</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movie in movies %}
+                <tr>
+                    <td>{{ movie.name }}</td>
+                    <td>{{ movie.director or '-' }}</td>
+                    <td>{{ movie.year or '-' }}</td>
+                    <td>{{ movie.rating or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('update_movie', user_id=user_id, movie_id=movie.id) }}" class="btn btn-sm btn-warning">Bearbeiten</a>
+                        <a href="{{ url_for('delete_movie', user_id=user_id, movie_id=movie.id) }}" class="btn btn-sm btn-danger">Löschen</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('add_movie', user_id=user_id) }}" class="btn btn-primary">Neuen Film hinzufügen</a>
+{% endblock %}
