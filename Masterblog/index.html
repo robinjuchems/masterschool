@@ -1,71 +1,73 @@
-from flask import Flask, render_template, request, redirect, url_for
-import json
-import os
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Blog</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        h1, h2 { color: #333; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 15px 0; padding: 10px; background-color: white; border: 1px solid #ddd; border-radius: 5px; }
+        .delete-btn { color: #ff0000; text-decoration: none; margin-left: 10px; }
+        .update-btn { color: #0066cc; text-decoration: none; margin-left: 10px; }
+        form { margin-top: 20px; max-width: 500px; }
+        label { display: block; margin: 5px 0; font-weight: bold; }
+        input[type="text"], textarea { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        input[type="submit"] { background-color: #333; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        input[type="submit"]:hover { background-color: #555; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Mein Blog</h1>
 
-app = Flask(__name__)
+    {% if view == 'list' %}
+        <h2>Alle Beiträge</h2>
+        {% if posts %}
+            <ul>
+                {% for post in posts %}
+                    <li>
+                        <strong>{{ post.title }}</strong> von {{ post.author }}<br>
+                        {{ post.content[:100] }}...
+                        <a href="{{ url_for('update', post_id=post.id) }}" class="update-btn">Bearbeiten</a>
+                        <form action="{{ url_for('delete', post_id=post.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="delete-btn" onclick="return confirm('Sicher, dass du diesen Beitrag löschen möchtest?');">Löschen</button>
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Keine Beiträge vorhanden.</p>
+        {% endif %}
+        <a href="{{ url_for('add') }}">Neuen Beitrag hinzufügen</a>
 
-# Funktion zum Laden der Blogbeiträge
-def load_blog_posts():
-    if os.path.exists('blog_posts.json'):
-        with open('blog_posts.json', 'r', encoding='utf-8') as file:
-            return json.load(file)
-    return []
+    {% elif view == 'add' %}
+        <h2>Neuen Beitrag hinzufügen</h2>
+        <form method="post" action="{{ url_for('add') }}">
+            <label for="title">Titel:</label>
+            <input type="text" name="title" id="title" required placeholder="Titel des Beitrags">
+            <label for="author">Autor:</label>
+            <input type="text" name="author" id="author" required placeholder="Dein Name">
+            <label for="content">Inhalt:</label>
+            <textarea name="content" id="content" rows="5" required placeholder="Dein Blogbeitrag..."></textarea>
+            <input type="submit" value="Hinzufügen">
+        </form>
+        <a href="{{ url_for('index') }}">Zurück zur Liste</a>
 
-# Funktion zum Speichern der Blogbeiträge
-def save_blog_posts(posts):
-    with open('blog_posts.json', 'w', encoding='utf-8') as file:
-        json.dump(posts, file, ensure_ascii=False, indent=4)
-
-# Startseite
-@app.route('/')
-def index():
-    posts = load_blog_posts()
-    return render_template('index.html', view='index', posts=posts)
-
-# Neuer Beitrag hinzufügen
-@app.route('/add', methods=['GET', 'POST'])
-def add():
-    if request.method == 'POST':
-        posts = load_blog_posts()
-        new_id = max([post['id'] for post in posts], default=0) + 1
-        new_post = {
-            'id': new_id,
-            'title': request.form['title'],
-            'author': request.form['author'],
-            'content': request.form['content']
-        }
-        posts.append(new_post)
-        save_blog_posts(posts)
-        return redirect(url_for('index'))
-    return render_template('index.html', view='add')
-
-# Beitrag aktualisieren
-@app.route('/update/
-<int:post_id xmlns:int="" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
-
- ">',
-    methods=['GET', 'POST'])
-    def update(post_id):
-    posts = load_blog_posts()
-    post = next((p for p in posts if p['id'] == post_id), None)
-    if not post:
-    return "Beitrag nicht gefunden", 404
-    if request.method == 'POST':
-    post['title'] = request.form['title']
-    post['author'] = request.form['author']
-    post['content'] = request.form['content']
-    save_blog_posts(posts)
-    return redirect(url_for('index'))
-    return render_template('index.html', view='update', post=post)
-
-    # Beitrag löschen
-    @app.route('/delete/
-    <int:post_id>')
-        def delete(post_id):
-        posts = load_blog_posts()
-        posts = [p for p in posts if p['id'] != post_id]
-        save_blog_posts(posts)
-        return redirect(url_for('index'))
-
-        if __name__ == '__main__':
-        app.run(debug=True)
+    {% elif view == 'update' %}
+        <h2>Beitrag bearbeiten</h2>
+        <form method="post" action="{{ url_for('update', post_id=post.id) }}">
+            <label for="title">Titel:</label>
+            <input type="text" name="title" id="title" value="{{ post.title }}" required>
+            <label for="author">Autor:</label>
+            <input type="text" name="author" id="author" value="{{ post.author }}" required>
+            <label for="content">Inhalt:</label>
+            <textarea name="content" id="content" rows="5" required>{{ post.content }}</textarea>
+            <input type="submit" value="Aktualisieren">
+        </form>
+        <a href="{{ url_for('index') }}">Zurück zur Liste</a>
+    {% endif %}
+</body>
+</html>
