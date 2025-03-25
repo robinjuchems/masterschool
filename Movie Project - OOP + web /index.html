@@ -1,76 +1,14 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FilmWeb-App</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        h1, h2 { color: #333; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        form { margin-top: 20px; }
-        input[type="text"], input[type="number"] { width: 200px; padding: 5px; }
-        input[type="submit"] { padding: 5px 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        ul { list-style-type: none; padding: 0; }
-        ul li { color: red; }
-    </style>
+    <title>__TEMPLATE_TITLE__</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Filmliste</h1>
-
-    <!-- Flash-Nachrichten anzeigen -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-
-    <!-- Filmliste anzeigen, falls Filme vorhanden -->
-    {% if movies %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Titel</th>
-                    <th>Regisseur</th>
-                    <th>Jahr</th>
-                    <th>Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for movie in movies %}
-                    <tr>
-                        <td>{{ movie[1] }}</td>
-                        <td>{{ movie[2] }}</td>
-                        <td>{{ movie[3] }}</td>
-                        <td>
-                            <a href="/edit/{{ movie[0] }}">Bearbeiten</a>
-                            <form method="post" action="/delete/{{ movie[0] }}" style="display:inline;">
-                                <input type="submit" value="Löschen">
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Keine Filme gefunden. Füge welche hinzu!</p>
-    {% endif %}
-
-    <!-- Formular zum Hinzufügen oder Bearbeiten -->
-    <h2>{{ 'Film bearbeiten' if edit_movie else 'Neuen Film hinzufügen' }}</h2>
-    <form method="post" action="{{ '/update/' + edit_movie[0]|string if edit_movie else '/add' }}">
-        <label for="title">Titel:</label>
-        <input type="text" id="title" name="title" value="{{ edit_movie[1] if edit_movie else '' }}" required><br>
-        <label for="director">Regisseur:</label>
-        <input type="text" id="director" name="director" value="{{ edit_movie[2] if edit_movie else '' }}" required><br>
-        <label for="year">Jahr:</label>
-        <input type="number" id="year" name="year" value="{{ edit_movie[3] if edit_movie else '' }}" required><br>
-        <input type="submit" value="{{ 'Film aktualisieren' if edit_movie else 'Film hinzufügen' }}">
-    </form>
+    <h1>__TEMPLATE_TITLE__</h1>
+    <div class="movie-grid">
+        __TEMPLATE_MOVIE_GRID__
+    </div>
 </body>
 </html>

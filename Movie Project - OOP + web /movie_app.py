@@ -204,8 +204,3 @@ class MovieApp:
                 self._generate_website()
             else:
                 print("Ungültige Eingabe, bitte erneut versuchen.")
-
-
-if __name__ == "__main__":
-    app = MovieApp()
-    app.run()
