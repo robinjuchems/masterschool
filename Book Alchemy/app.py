@@ -2,13 +2,12 @@
 Book Alchemy - Eine Webanwendung zur Verwaltung von Büchern und Autoren.
 
 Diese Anwendung verwendet Flask und SQLAlchemy, um eine SQLite-Datenbank zu verwalten,
-Bücher und Autoren anzuzeigen und Bücher zu löschen, wobei Autoren ohne Bücher ebenfalls
-entfernt werden. Alle Datenbankmodelle sind in dieser Datei enthalten.
+Bücher und Autoren anzuzeigen, hinzuzufügen und zu löschen. Autoren ohne Bücher werden
+ebenfalls entfernt. Alle Datenbankmodelle sind in dieser Datei enthalten.
 """
 
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug import Response
 
 # Flask-Anwendung initialisieren
 app = Flask(__name__)
@@ -58,31 +57,64 @@ def index() -> str:
     return render_template('home.html', books=books, authors=authors)
 
 
+@app.route('/add', methods=['POST'])
+def add_book() -> str:
+    """
+    Fügt ein neues Buch und ggf. einen neuen Autor hinzu.
+
+    Rückgabe:
+        str: Weiterleitung zur Index-Seite.
+    """
+    title = request.form.get('title', '').strip()
+    author_name = request.form.get('author', '').strip()
+
+    if not title or not author_name:
+        flash("Title and author name are required.", "error")
+        return redirect(url_for('index'))
+
+    # Prüfe, ob der Autor bereits existiert
+    author = Author.query.filter_by(name=author_name).first()
+    if not author:
+        author = Author(name=author_name)
+        db.session.add(author)
+
+    book = Book(title=title, author=author)
+    try:
+        db.session.add(book)
+        db.session.commit()
+        flash(f"Book '{title}' by '{author_name}' has been added.", "success")
+    except Exception as error:
+        db.session.rollback()
+        flash(f"Error adding book: {error}", "error")
+
+    return redirect(url_for('index'))
+
+
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
-def delete_book(book_id: int) -> Response:
+def delete_book(book_id: int) -> str:
     """
     Löscht ein Buch anhand seiner ID und den zugehörigen Autor, falls keine Bücher übrig sind.
 
     Parameter:
         book_id (int): Die ID des zu löschenden Buches.
     """
-    lovebook = Book.query.get_or_404(book_id)
-    love = lovebook.author  # Speichere den Autor vor dem Löschen
+    book = Book.query.get_or_404(book_id)
+    author = book.author  # Speichere den Autor vor dem Löschen
 
     try:
-        db.session.delete(lovebook)
+        db.session.delete(book)
         db.session.commit()
-        flash(f"Book '{lovebook.title}' has been successfully deleted.", "success")
+        flash(f"Book '{book.title}' has been successfully deleted.", "success")
     except Exception as error:
         db.session.rollback()
         flash(f"Error deleting book: {error}", "error")
         return redirect(url_for('index'))
 
-    if not love.books:  # Lösche den Autor, wenn keine Bücher mehr vorhanden sind
+    if not author.books:  # Lösche den Autor, wenn keine Bücher mehr vorhanden sind
         try:
-            db.session.delete(love)
+            db.session.delete(author)
             db.session.commit()
-            flash(f"Author '{love.name}' was deleted because no books remain.", "info")
+            flash(f"Author '{author.name}' was deleted because no books remain.", "info")
         except Exception as error:
             db.session.rollback()
             flash(f"Error deleting author: {error}", "error")

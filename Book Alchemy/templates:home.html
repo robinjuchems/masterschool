@@ -9,6 +9,7 @@
         .success { background-color: #d4edda; color: #155724; }
         .error { background-color: #f8d7da; color: #721c24; }
         .info { background-color: #cce5ff; color: #004085; }
+        form { margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -21,6 +22,15 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
+
+    <h2>Add a New Book</h2>
+    <form action="{{ url_for('add_book') }}" method="post">
+        <label for="title">Book Title:</label>
+        <input type="text" id="title" name="title" required>
+        <label for="author">Author Name:</label>
+        <input type="text" id="author" name="author" required>
+        <button type="submit">Add Book</button>
+    </form>
 
     <h2>Books</h2>
     {% if books %}
