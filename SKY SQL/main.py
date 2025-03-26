@@ -8,10 +8,9 @@ Es unterstützt alle 7 Abfragen aus der Aufgabe 'Day 2 - Data Queries'.
 from datetime import datetime
 from data import FlightData
 from typing import List
+import os
 
-SQLITE_URI = 'sqlite:///data/flights.sqlite3'  # Korrigierter URI
-IATA_LENGTH = 3
-
+SQLITE_URI = 'sqlite:///data/flights.sqlite3'  # Relativer Pfad, wird absolut gemacht
 
 def flight_by_id(data_manager: FlightData) -> None:
     """Query 1 & 2: Zeigt Informationen zu einem Flug basierend auf seiner ID an."""
@@ -24,19 +23,21 @@ def flight_by_id(data_manager: FlightData) -> None:
         except ValueError:
             print("Ungültige Eingabe. Bitte eine numerische Flug-ID eingeben.")
 
-
 def flights_by_date(data_manager: FlightData) -> None:
     """Query 3: Zeigt Flüge an, die an einem bestimmten Datum stattfinden."""
     while True:
-        date_input = input("Enter date in DD/MM/YYYY format: ").strip()
+        date_input = input("Enter date in DD/MM/YYYY or DD.MM.YYYY format: ").strip()
         try:
-            date_obj = datetime.strptime(date_input, '%d/%m/%Y')
+            # Versuche beide Formate
+            try:
+                date_obj = datetime.strptime(date_input, '%d/%m/%Y')  # DD/MM/YYYY
+            except ValueError:
+                date_obj = datetime.strptime(date_input, '%d.%m.%Y')  # DD.MM.YYYY
             results = data_manager.get_flights_by_date(date_obj.day, date_obj.month, date_obj.year)
             print_results(results, f"Flüge am {date_input}")
             break
         except ValueError as error:
-            print(f"Ungültiges Datumsformat. Bitte DD/MM/YYYY verwenden. Fehler: {error}")
-
+            print(f"Ungültiges Datumsformat. Bitte DD/MM/YYYY oder DD.MM.YYYY verwenden. Fehler: {error}")
 
 def delayed_flights_by_airline(data_manager: FlightData) -> None:
     """Unterstützt Query 5: Zeigt verspätete Flüge einer bestimmten Fluggesellschaft an."""
@@ -47,35 +48,29 @@ def delayed_flights_by_airline(data_manager: FlightData) -> None:
     results = data_manager.get_delayed_flights_by_airline(airline_input)
     print_results(results, f"Verspätete Flüge für Fluggesellschaft '{airline_input}'")
 
-
 def delayed_flights_by_airport(data_manager: FlightData) -> None:
     """Query 6: Zeigt verspätete Flüge von einem bestimmten Abflugflughafen an."""
     while True:
         airport_input = input("Enter origin airport IATA code: ").upper().strip()
-        if airport_input.isalpha() and len(airport_input) == IATA_LENGTH:
+        if airport_input.isalpha() and len(airport_input) == 3:
             results = data_manager.get_delayed_flights_by_airport(airport_input)
             print_results(results, f"Verspätete Flüge von Flughafen {airport_input}")
             break
         print("Ungültiger IATA-Code (muss 3 Buchstaben sein). Versuche es erneut.")
 
-
 def additional_queries(data_manager: FlightData) -> None:
     """Führt Query 4, 5 und 7 aus."""
-    # Query 4: Alle verspäteten Flüge
     print("\nQuery 4 - Alle verspäteten Flüge (sortiert nach Verspätung):")
     results = data_manager.get_all_delayed_flights()
     print_results(results, "Alle verspäteten Flüge")
 
-    # Query 5: Durchschnittliche Verspätung pro Fluggesellschaft
     print("\nQuery 5 - Durchschnittliche Verspätung pro Fluggesellschaft:")
     results = data_manager.get_average_delay_by_airline()
     print_results(results, "Durchschnittliche Verspätung pro Fluggesellschaft")
 
-    # Query 7: Verspätete Flüge pro Tag
     print("\nQuery 7 - Anzahl verspäteter Flüge pro Tag:")
     results = data_manager.get_delayed_flights_per_day()
     print_results(results, "Verspätete Flüge pro Tag")
-
 
 def print_results(results: List, title: str = "Ergebnisse") -> None:
     """Gibt die Ergebnisse einer Datenbankabfrage formatiert aus."""
@@ -87,32 +82,58 @@ def print_results(results: List, title: str = "Ergebnisse") -> None:
 
     for result in results:
         try:
-            if 'ID' in result._mapping and 'DELAY' in result._mapping:  # Query 1-4, 6
-                flight_id = result.get('ID', 'N/A')
-                origin = result.get('ORIGIN_AIRPORT', 'N/A')
-                destination = result.get('DESTINATION_AIRPORT', 'N/A', '')
-                airline = result.get('AIRLINE', 'N/A')
-                delay = int(result.get('DELAY', 0))
-                flight_number = result.get('flight_number', 'N/A')
-                if delay > 0:
-                    print(f"{flight_id}. {origin} -> {destination} by {airline} ({flight_number}), Delay: {delay} minutes")
-                else:
-                    print(f"{flight_id}. {origin} -> {destination} by {airline} ({flight_number})")
-            elif 'AVERAGE_DELAY' in result._mapping:  # Query 5
-                airline = result.get('AIRLINE', 'N/A')
-                avg_delay = round(float(result.get('AVERAGE_DELAY', 0)), 2)
-                print(f"{airline}: Durchschnittliche Verspätung {avg_delay} Minuten")
-            elif 'DELAYED_FLIGHTS' in result._mapping:  # Query 7
-                year = result.get('year', 'N/A')
-                month = result.get('month', 'N/A')
-                day = result.get('day', 'N/A')
-                count = result.get('DELAYED_FLIGHTS', 0)
-                print(f"{day}/{month}/{year}: {count} verspätete Flüge")
-            else:
-                print(result)  # Fallback
-        except (ValueError, TypeError) as error:
-            print(f"Fehler beim Verarbeiten des Ergebnisses: {error}")
+            mapping = result._mapping
 
+            # Query 1 & 2: Vollständige Flugdaten
+            if all(key in mapping for key in ['ID', 'year', 'month', 'day', 'DELAY']):
+                flight_id = mapping.get('ID', 'N/A')
+                year = mapping.get('year', 'N/A')
+                month = mapping.get('month', 'N/A')
+                day = mapping.get('day', 'N/A')
+                origin = mapping.get('ORIGIN_AIRPORT', 'N/A')
+                destination = mapping.get('DESTINATION_AIRPORT', 'N/A')
+                airline = mapping.get('AIRLINE', 'N/A')
+                delay = int(mapping.get('DELAY', 0))
+                print(f"{flight_id}. {origin} -> {destination} by {airline}, Date: {day}/{month}/{year}, Delay: {delay} minutes")
+
+            # Query 3 & 6: Flugnummer und Delay
+            elif 'flight_number' in mapping:
+                flight_id = mapping.get('ID', 'N/A')
+                flight_number = mapping.get('flight_number', 'N/A')
+                origin = mapping.get('ORIGIN_AIRPORT', 'N/A')
+                delay = int(mapping.get('DELAY', 0))
+                print(f"{flight_id}. {origin} ({flight_number}), Delay: {delay} minutes")
+
+            # Query 4: Verspätete Flüge
+            elif 'ID' in mapping and 'DELAY' in mapping and 'year' in mapping:
+                flight_id = mapping.get('ID', 'N/A')
+                year = mapping.get('year', 'N/A')
+                month = mapping.get('month', 'N/A')
+                day = mapping.get('day', 'N/A')
+                origin = mapping.get('ORIGIN_AIRPORT', 'N/A')
+                destination = mapping.get('DESTINATION_AIRPORT', 'N/A')
+                delay = int(mapping.get('DELAY', 0))
+                print(f"{flight_id}. {origin} -> {destination}, Date: {day}/{month}/{year}, Delay: {delay} minutes")
+
+            # Query 5: Durchschnittliche Verspätung
+            elif 'AVERAGE_DELAY' in mapping:
+                airline = mapping.get('AIRLINE', 'N/A')
+                avg_delay = round(float(mapping.get('AVERAGE_DELAY', 0)), 2)
+                print(f"{airline}: Durchschnittliche Verspätung {avg_delay} Minuten")
+
+            # Query 7: Verspätete Flüge pro Tag
+            elif 'DELAYED_FLIGHTS' in mapping:
+                year = mapping.get('year', 'N/A')
+                month = mapping.get('month', 'N/A')
+                day = mapping.get('day', 'N/A')
+                count = mapping.get('DELAYED_FLIGHTS', 0)
+                print(f"{day}/{month}/{year}: {count} verspätete Flüge")
+
+            else:
+                print(f"Unbekanntes Ergebnisformat: {result}")
+        except Exception as e:
+            print(f"Fehler beim Verarbeiten des Ergebnisses: {e}")
+            print(f"Rohdaten: {result}")
 
 def show_menu_and_get_input() -> callable:
     """Zeigt das Menü an und gibt die ausgewählte Funktion zurück."""
@@ -136,19 +157,22 @@ def show_menu_and_get_input() -> callable:
         except ValueError:
             print("Ungültige Eingabe. Bitte eine Zahl eingeben.")
 
-
 def main() -> None:
     """Hauptfunktion, die das Programm ausführt."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, 'data', 'flights.sqlite3')
+    absolute_uri = f'sqlite:///{db_path}'
+
     try:
-        data_manager = FlightData(SQLITE_URI)
+        data_manager = FlightData(absolute_uri)
         print("Verbindung zur Datenbank erfolgreich hergestellt.")
         while True:
             selected_function = show_menu_and_get_input()
             selected_function(data_manager)
+    except ValueError as ve:
+        print(f"Fehler bei der Datenbankinitialisierung: {ve}")
     except Exception as error:
         print(f"Ein unerwarteter Fehler ist aufgetreten: {error}")
-        print("Stelle sicher, dass 'data/flights.sqlite3' existiert und SQLAlchemy installiert ist.")
-
 
 if __name__ == "__main__":
     main()
