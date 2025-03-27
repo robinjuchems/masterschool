@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filme von {{ user.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Filme von {{ user.name }}</h1>
+    <a href="{{ url_for('list_users') }}">Zurück zur Benutzerliste</a>
+    <a href="{{ url_for('add_movie_route', user_id=user_id) }}">Film hinzufügen</a>
+    <div class="movie-grid">
+        {% for movie in movies %}
+        <div class="movie-item">
+            <h3>{{ movie.name }}</h3>
+            <p>Regisseur: {{ movie.director }}</p>
+            <p>Jahr: {{ movie.year }}</p>
+            <p>Bewertung: {{ movie.rating }}</p>
+            <a href="{{ url_for('update_movie', user_id=user_id, movie_id=movie.id) }}">Bearbeiten</a>
+            <a href="{{ url_for('delete_movie_route', user_id=user_id, movie_id=movie.id) }}">Löschen</a>
+        </div>
+        {% else %}
+        <p>Keine Filme vorhanden.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

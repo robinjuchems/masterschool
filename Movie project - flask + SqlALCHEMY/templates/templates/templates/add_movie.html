@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Film hinzufügen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Film hinzufügen</h1>
+    <a href="{{ url_for('user_movies', user_id=user_id) }}">Zurück zur Filmliste</a>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <label for="title">Titel:</label>
+        {{ form.title(id="title") }}
+        {{ form.submit() }}
+    </form>
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html>

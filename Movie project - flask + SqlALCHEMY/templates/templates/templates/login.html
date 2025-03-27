@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Anmelden</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Anmelden</h1>
+    <a href="{{ url_for('home') }}">Zurück zur Startseite</a>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <label for="username">Benutzername:</label>
+        {{ form.username(id="username") }}
+        <label for="password">Passwort:</label>
+        {{ form.password(id="password") }}
+        {{ form.submit() }}
+    </form>
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
