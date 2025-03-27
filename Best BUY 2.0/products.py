@@ -4,12 +4,15 @@ class Product:
     def __init__(self, name: str, price: float, quantity: int):
         """Initialize a product with name, price, and quantity."""
         if not name or price < 0 or quantity < 0:
-            raise ValueError("Invalid product attributes: name cannot be empty, price and quantity must be non-negative.")
+            raise ValueError(
+                "Invalid product attributes: name cannot be empty, "
+                "price and quantity must be non-negative."
+            )
         self.name = name
         self.price = price
         self.quantity = quantity
         self.promotion = None
-        self.active = quantity > 0  # Für Tests angepasst
+        self.active = quantity > 0
 
     def get_quantity(self) -> int:
         """Return the current quantity of the product."""
@@ -23,7 +26,7 @@ class Product:
             raise ValueError(f"Not enough stock for {self.name}. Available: {self.quantity}")
         self.quantity -= quantity
         if self.quantity == 0:
-            self.active = False  # Für Tests angepasst
+            self.active = False
         if self.promotion:
             return self.promotion.apply_promotion(self, quantity)
         return quantity * self.price
@@ -84,4 +87,3 @@ class LimitedProduct(Product):
         if self.promotion:
             return self.promotion.apply_promotion(self, quantity)
         return quantity * self.price
-

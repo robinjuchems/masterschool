@@ -16,7 +16,7 @@ def handle_order(store):
     shopping_list = []
     print("Enter items to order (type 'done' to finish):")
     while True:
-        product_name = input("Product name: ")
+        product_name = input("Enter product name (or 'done' to finish): ").strip()
         if product_name.lower() == 'done':
             break
         try:
@@ -27,11 +27,11 @@ def handle_order(store):
         except ValueError:
             print("Invalid quantity.")
             continue
-        product = next((p for p in store.get_all_products() if p.name == product_name), None)
+        product = next((p for p in store.get_all_products() if p.name.lower() == product_name.lower()), None)
         if product:
             shopping_list.append((product, quantity))
         else:
-            print("Product not found.")
+            print(f"Product not found. You entered: '{product_name}'")
     if shopping_list:
         try:
             total_cost = store.order(shopping_list)
