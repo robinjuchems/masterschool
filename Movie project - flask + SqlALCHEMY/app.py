@@ -36,9 +36,18 @@ class User(db.Model, UserMixin):
     movies = db.relationship('Movie', backref='user', lazy=True)
 
     def set_password(self, password):
+        """
+
+        :param password:
+        """
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """
+
+        :param password:
+        :return:
+        """
         return check_password_hash(self.password_hash, password)
 
 # Filmmodell
