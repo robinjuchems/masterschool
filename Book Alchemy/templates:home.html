@@ -1,64 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>Book Alchemy</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .message { padding: 10px; margin: 10px 0; }
-        .success { background-color: #d4edda; color: #155724; }
-        .error { background-color: #f8d7da; color: #721c24; }
-        .info { background-color: #cce5ff; color: #004085; }
-        form { margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        .search-form, .sort-links, .book-form { margin-bottom: 20px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 10px 0; }
+        .delete-form { display: inline; }
     </style>
 </head>
 <body>
     <h1>Book Alchemy</h1>
 
+    <!-- Flash-Nachrichten anzeigen -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="message {{ category }}">{{ message }}</div>
+                <p class="{{ category }}">{{ message }}</p>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <h2>Add a New Book</h2>
-    <form action="{{ url_for('add_book') }}" method="post">
-        <label for="title">Book Title:</label>
-        <input type="text" id="title" name="title" required>
-        <label for="author">Author Name:</label>
-        <input type="text" id="author" name="author" required>
-        <button type="submit">Add Book</button>
-    </form>
+    <!-- Suchformular -->
+    <div class="search-form">
+        <form action="{{ url_for('index') }}" method="get">
+            <input type="text" name="search" placeholder="Suche nach Titel oder Autor" value="{{ search_term }}">
+            <button type="submit">Suchen</button>
+        </form>
+    </div>
 
-    <h2>Books</h2>
+    <!-- Sortierlinks -->
+    <div class="sort-links">
+        <a href="{{ url_for('index', search=search_term, sort='title') }}">Nach Titel sortieren</a> |
+        <a href="{{ url_for('index', search=search_term, sort='author') }}">Nach Autor sortieren</a>
+    </div>
+
+    <!-- Bücher anzeigen -->
+    <h2>Bücher</h2>
     {% if books %}
         <ul>
-        {% for book in books %}
-            <li>
-                {{ book.title }} by {{ book.author.name }}
-                <form action="{{ url_for('delete_book', book_id=book.id) }}" method="post" style="display:inline;">
-                    <button type="submit" onclick="return confirm('Are you sure you want to delete this book?');">
-                        Delete
-                    </button>
-                </form>
-            </li>
-        {% endfor %}
+            {% for book in books %}
+                <li>
+                    {{ book.title }} von {{ book.author.name }}
+                    <form class="delete-form" action="{{ url_for('delete_book', book_id=book.id) }}" method="post">
+                        <button type="submit">Löschen</button>
+                    </form>
+                </li>
+            {% endfor %}
         </ul>
     {% else %}
-        <p>No books available.</p>
+        <p>Keine Bücher gefunden.</p>
     {% endif %}
 
-    <h2>Authors</h2>
+    <!-- Autoren anzeigen -->
+    <h2>Autoren</h2>
     {% if authors %}
         <ul>
-        {% for author in authors %}
-            <li>{{ author.name }} ({{ author.books|length }} books)</li>
-        {% endfor %}
+            {% for author in authors %}
+                <li>{{ author.name }}</li>
+            {% endfor %}
         </ul>
     {% else %}
-        <p>No authors available.</p>
+        <p>Keine Autoren vorhanden.</p>
     {% endif %}
+
+    <!-- Formular zum Hinzufügen eines Buches -->
+    <div class="book-form">
+        <h2>Neues Buch hinzufügen</h2>
+        <form action="{{ url_for('add_book') }}" method="post">
+            <label for="title">Titel:</label>
+            <input type="text" id="title" name="title" required>
+            <label for="author">Autor:</label>
+            <input type="text" id="author" name="author" required>
+            <button type="submit">Hinzufügen</button>
+        </form>
+    </div>
 </body>
 </html>

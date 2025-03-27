@@ -1,135 +1,104 @@
 """
 Book Alchemy - Eine Webanwendung zur Verwaltung von Büchern und Autoren.
-
-Diese Anwendung verwendet Flask und SQLAlchemy, um eine SQLite-Datenbank zu verwalten,
-Bücher und Autoren anzuzeigen, hinzuzufügen und zu löschen. Autoren ohne Bücher werden
-ebenfalls entfernt. Alle Datenbankmodelle sind in dieser Datei enthalten.
 """
 
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from data_models import db, Author, Book
 
-# Flask-Anwendung initialisieren
+# Flask-App initialisieren
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/library.sqlite'
+
+# Pfade definieren und Verzeichnis sicherstellen
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
+DATABASE_PATH = os.path.join(DATA_DIR, 'library.sqlite')
+
+# Flask-Konfiguration mit absolutem Pfad
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dein_geheimer_schluessel'  # Für Flash-Nachrichten erforderlich
+app.config['SECRET_KEY'] = os.urandom(16)
 
-# SQLAlchemy initialisieren
-db = SQLAlchemy(app)
+# Datenbank initialisieren
+db.init_app(app)
 
+# Debugging: Pfad ausgeben
+print(f"Database path: {DATABASE_PATH}")
 
-class Author(db.Model):
-    """
-    Modell für einen Autor in der Datenbank.
-    """
-    __tablename__ = 'authors'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    books = db.relationship('Book', backref='author', cascade='all, delete-orphan')
-
-    def __repr__(self) -> str:
-        """Gibt eine String-Repräsentation des Autors zurück."""
-        return f"Author(name='{self.name}')"
-
-
-class Book(db.Model):
-    """
-    Modell für ein Buch in der Datenbank.
-    """
-    __tablename__ = 'books'
-
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey('authors.id'), nullable=False)
-
-    def __repr__(self) -> str:
-        """Gibt eine String-Repräsentation des Buches zurück."""
-        return f"Book(title='{self.title}')"
-
-
+# Routen
 @app.route('/')
-def index() -> str:
-    """Zeigt die Homepage mit einer Liste aller Bücher und Autoren an."""
-    books = Book.query.all()
-    authors = Author.query.all()
-    return render_template('home.html', books=books, authors=authors)
+def index():
+    """Zeigt die Homepage mit Büchern und Autoren, inklusive Suche und Sortierung."""
+    search_term = request.args.get('search', '').strip()
+    sort_by = request.args.get('sort', 'title')
 
+    query = Book.query.join(Author)
+    if search_term:
+        query = query.filter(
+            (Book.title.ilike(f'%{search_term}%')) |
+            (Author.name.ilike(f'%{search_term}%'))
+        )
+
+    if sort_by == 'title':
+        books = query.order_by(Book.title).all()
+    elif sort_by == 'author':
+        books = query.order_by(Author.name).all()
+    else:
+        books = query.all()
+
+    authors = Author.query.all()
+    return render_template('home.html', books=books, authors=authors, search_term=search_term, sort_by=sort_by)
 
 @app.route('/add', methods=['POST'])
-def add_book() -> str:
-    """
-    Fügt ein neues Buch und ggf. einen neuen Autor hinzu.
-
-    Rückgabe:
-        str: Weiterleitung zur Index-Seite.
-    """
+def add_book():
+    """Fügt ein neues Buch und ggf. einen neuen Autor hinzu."""
     title = request.form.get('title', '').strip()
     author_name = request.form.get('author', '').strip()
 
     if not title or not author_name:
-        flash("Title and author name are required.", "error")
+        flash("Titel und Autor sind erforderlich.", "error")
         return redirect(url_for('index'))
 
-    # Prüfe, ob der Autor bereits existiert
-    author = Author.query.filter_by(name=author_name).first()
-    if not author:
-        author = Author(name=author_name)
-        db.session.add(author)
+    existing_author = Author.query.filter_by(name=author_name).first()
+    if not existing_author:
+        existing_author = Author(name=author_name)
+        db.session.add(existing_author)
 
-    book = Book(title=title, author=author)
+    new_book = Book(title=title, author=existing_author)
     try:
-        db.session.add(book)
+        db.session.add(new_book)
         db.session.commit()
-        flash(f"Book '{title}' by '{author_name}' has been added.", "success")
-    except Exception as error:
+        flash(f"Buch '{title}' hinzugefügt.", "success")
+    except IntegrityError:
         db.session.rollback()
-        flash(f"Error adding book: {error}", "error")
-
+        flash("Fehler beim Hinzufügen: Integritätsverletzung.", "error")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        flash(f"Fehler beim Hinzufügen: {str(e)}", "error")
     return redirect(url_for('index'))
 
-
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
-def delete_book(book_id: int) -> str:
-    """
-    Löscht ein Buch anhand seiner ID und den zugehörigen Autor, falls keine Bücher übrig sind.
-
-    Parameter:
-        book_id (int): Die ID des zu löschenden Buches.
-    """
+def delete_book(book_id):
+    """Löscht ein Buch und ggf. den Autor."""
     book = Book.query.get_or_404(book_id)
-    author = book.author  # Speichere den Autor vor dem Löschen
+    author = book.author
 
     try:
         db.session.delete(book)
         db.session.commit()
-        flash(f"Book '{book.title}' has been successfully deleted.", "success")
-    except Exception as error:
-        db.session.rollback()
-        flash(f"Error deleting book: {error}", "error")
-        return redirect(url_for('index'))
-
-    if not author.books:  # Lösche den Autor, wenn keine Bücher mehr vorhanden sind
-        try:
+        flash(f"Buch '{book.title}' gelöscht.", "success")
+        if not author.books:
             db.session.delete(author)
             db.session.commit()
-            flash(f"Author '{author.name}' was deleted because no books remain.", "info")
-        except Exception as error:
-            db.session.rollback()
-            flash(f"Error deleting author: {error}", "error")
-
+            flash(f"Autor '{author.name}' wurde ebenfalls gelöscht, da keine Bücher mehr existieren.", "success")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        flash(f"Fehler beim Löschen: {str(e)}", "error")
     return redirect(url_for('index'))
-
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()  # Erstellt die Tabellen, falls sie nicht existieren
-        # Optional: Testdaten hinzufügen
-        if not Author.query.first():  # Nur hinzufügen, wenn die Datenbank leer ist
-            author = Author(name="J.K. Rowling")
-            book = Book(title="Harry Potter", author=author)
-            db.session.add(author)
-            db.session.add(book)
-            db.session.commit()
-    app.run(debug=True, host='0.0.0.0', port=5002)  # Codio erwartet Port 5002
+        db.create_all()  # Erstellt die Tabellen
+    app.run(debug=True, host='0.0.0.0', port=5002)
