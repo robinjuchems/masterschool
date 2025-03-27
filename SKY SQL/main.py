@@ -28,7 +28,6 @@ def flights_by_date(data_manager: FlightData) -> None:
     while True:
         date_input = input("Enter date in DD/MM/YYYY or DD.MM.YYYY format: ").strip()
         try:
-            # Versuche beide Formate
             try:
                 date_obj = datetime.strptime(date_input, '%d/%m/%Y')  # DD/MM/YYYY
             except ValueError:
@@ -84,8 +83,7 @@ def print_results(results: List, title: str = "Ergebnisse") -> None:
         try:
             mapping = result._mapping
 
-            # Query 1 & 2: Vollständige Flugdaten
-            if all(key in mapping for key in ['ID', 'year', 'month', 'day', 'DELAY']):
+            if 'ID' in mapping and 'year' in mapping:
                 flight_id = mapping.get('ID', 'N/A')
                 year = mapping.get('year', 'N/A')
                 month = mapping.get('month', 'N/A')
@@ -96,7 +94,6 @@ def print_results(results: List, title: str = "Ergebnisse") -> None:
                 delay = int(mapping.get('DELAY', 0))
                 print(f"{flight_id}. {origin} -> {destination} by {airline}, Date: {day}/{month}/{year}, Delay: {delay} minutes")
 
-            # Query 3 & 6: Flugnummer und Delay
             elif 'flight_number' in mapping:
                 flight_id = mapping.get('ID', 'N/A')
                 flight_number = mapping.get('flight_number', 'N/A')
@@ -104,24 +101,11 @@ def print_results(results: List, title: str = "Ergebnisse") -> None:
                 delay = int(mapping.get('DELAY', 0))
                 print(f"{flight_id}. {origin} ({flight_number}), Delay: {delay} minutes")
 
-            # Query 4: Verspätete Flüge
-            elif 'ID' in mapping and 'DELAY' in mapping and 'year' in mapping:
-                flight_id = mapping.get('ID', 'N/A')
-                year = mapping.get('year', 'N/A')
-                month = mapping.get('month', 'N/A')
-                day = mapping.get('day', 'N/A')
-                origin = mapping.get('ORIGIN_AIRPORT', 'N/A')
-                destination = mapping.get('DESTINATION_AIRPORT', 'N/A')
-                delay = int(mapping.get('DELAY', 0))
-                print(f"{flight_id}. {origin} -> {destination}, Date: {day}/{month}/{year}, Delay: {delay} minutes")
-
-            # Query 5: Durchschnittliche Verspätung
             elif 'AVERAGE_DELAY' in mapping:
                 airline = mapping.get('AIRLINE', 'N/A')
                 avg_delay = round(float(mapping.get('AVERAGE_DELAY', 0)), 2)
                 print(f"{airline}: Durchschnittliche Verspätung {avg_delay} Minuten")
 
-            # Query 7: Verspätete Flüge pro Tag
             elif 'DELAYED_FLIGHTS' in mapping:
                 year = mapping.get('year', 'N/A')
                 month = mapping.get('month', 'N/A')

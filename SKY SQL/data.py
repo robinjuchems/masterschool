@@ -6,8 +6,9 @@ mit SQLAlchemy abstrahiert und Methoden zum Abfragen von Flugdaten bietet. Ein F
 verspätet, wenn seine Verspätung nicht NULL ist und mindestens 20 Minuten beträgt.
 """
 
-from sqlalchemy import create_engine, text
-from typing import List, Dict, Any, Optional
+from sqlalchemy import create_engine, text, Row
+from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Dict, Any, Optional, Sequence
 
 
 class FlightData:
@@ -29,7 +30,7 @@ class FlightData:
             raise ValueError("Ungültiger Datenbank-URI: Muss mit 'sqlite:///' beginnen.")
         self.engine = create_engine(db_uri)
 
-    def _execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List:
+    def _execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> list[Any] | Sequence[Row[Any]]:
         """
         Führt die angegebene SQL-Abfrage mit optionalen Parametern aus.
 
@@ -39,16 +40,16 @@ class FlightData:
 
         Rückgabe:
             list: Eine Liste von SQLAlchemy-Row-Objekten mit den Abfrageergebnissen.
-
-        Raises:
-            Exception: Bei Datenbankfehlern (wird abgefangen und leer zurückgegeben).
         """
         try:
             with self.engine.connect() as conn:
                 result_obj = conn.execute(text(query), params or {})
                 return result_obj.fetchall()
+        except SQLAlchemyError as e:
+            print(f"SQLAlchemy-Fehler bei Abfrage: {e}")
+            return []
         except Exception as e:
-            print(f"Datenbankfehler bei Abfrage: {e}")
+            print(f"Unerwarteter Fehler bei Abfrage: {e}")
             return []
 
     def get_flight_by_id(self, flight_id: int) -> List:
@@ -136,7 +137,8 @@ class FlightData:
             "departure_delay AS DELAY "
             "FROM flights "
             "WHERE origin_airport = :airport_code "
-            "AND departure_delay > 0"
+            "AND departure_delay IS NOT NULL "
+            "AND departure_delay >= 20"
         )
         return self._execute_query(query, {"airport_code": airport_code})
 
@@ -154,7 +156,8 @@ class FlightData:
             "destination_airport AS DESTINATION_AIRPORT, "
             "departure_delay AS DELAY "
             "FROM flights "
-            "WHERE departure_delay > 0 "
+            "WHERE departure_delay IS NOT NULL "
+            "AND departure_delay >= 20 "
             "ORDER BY departure_delay DESC"
         )
         return self._execute_query(query)
@@ -183,7 +186,8 @@ class FlightData:
         query = (
             "SELECT year, month, day, COUNT(*) AS DELAYED_FLIGHTS "
             "FROM flights "
-            "WHERE departure_delay > 0 "
+            "WHERE departure_delay IS NOT NULL "
+            "AND departure_delay >= 20 "
             "GROUP BY year, month, day "
             "ORDER BY year, month, day"
         )
@@ -195,5 +199,9 @@ if __name__ == "__main__":
     try:
         data_layer = FlightData(SQLITE_URI)
         print("Test - Flug mit ID 280:", data_layer.get_flight_by_id(280))
+        print("Test - Flüge am 1.1.2015:", data_layer.get_flights_by_date(1, 1, 2015))
+        print("Test - Verspätete Flüge von Delta:", data_layer.get_delayed_flights_by_airline("Delta"))
+        print("Test - Verspätete Flüge von JFK:", data_layer.get_delayed_flights_by_airport("JFK"))
+        print("Test - Alle verspäteten Flüge (Top 5):", data_layer.get_all_delayed_flights()[:5])
     except Exception as e:
         print(f"Fehler beim Test: {e}")
