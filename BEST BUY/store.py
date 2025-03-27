@@ -25,9 +25,10 @@ class Store:
             total_cost += product.buy(qty)
         return total_cost
 
-    def __str__(self) -> str:
-        """Return a string representation of the store."""
-        return f"Store with {len(self.products)} products"
+    @staticmethod
+    def get_store_description() -> str:
+        """Return a static description of the store."""
+        return "Best Buy Store"
 
 
 if __name__ == "__main__":

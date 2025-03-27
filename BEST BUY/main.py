@@ -1,7 +1,5 @@
 """
 Best Buy Store - Eine Webanwendung zur Verwaltung von Produkten im Laden.
-
-Diese Anwendung ermöglicht das Anzeigen, Bestellen und Verwalten von Produkten.
 """
 
 from products import Product
@@ -21,10 +19,10 @@ def show_menu() -> None:
 def handle_order(store: Store) -> None:
     """Handle the process of making an order."""
     shopping_list = []
-    print("Enter items to order (type 'done' to finish):")
+    print("Enter items to order (type 'done', 'finish', or 'exit' to finish):")
     while True:
         product_name = input("Enter product name (or 'done' to finish): ").strip()
-        if product_name.lower() == 'done':
+        if product_name.lower() in ['done', 'finish', 'exit']:
             break
         try:
             quantity = float(input("Enter quantity: "))
@@ -32,15 +30,19 @@ def handle_order(store: Store) -> None:
                 print("Quantity must be positive.")
                 continue
         except ValueError:
-            print("Invalid quantity.")
+            print("Invalid quantity. Please enter a number.")
             continue
         product = next(
-            (p for p in store.get_all_products() if p.name == product_name), None
+            (p for p in store.get_all_products() if p.name.lower() == product_name.lower()), None
         )
-        if product and product.is_active():
-            shopping_list.append((product, quantity))
+        if product:
+            if product.is_active():
+                shopping_list.append((product, quantity))
+                print(f"Added {quantity:.2f} of {product_name} to your order.")
+            else:
+                print(f"{product_name} is out of stock.")
         else:
-            print("Product not found or out of stock.")
+            print(f"Product '{product_name}' not found.")
     if shopping_list:
         try:
             total_cost = store.order(shopping_list)
@@ -54,9 +56,9 @@ def handle_order(store: Store) -> None:
 def main() -> None:
     """Initialize the store and run the main menu loop."""
     product_list = [
-        Product("MacBook Air M2", price=1450.0, quantity=100),
-        Product("Bose QuietComfort Earbuds", price=250.0, quantity=500),
-        Product("Google Pixel 7", price=500.0, quantity=250),
+        Product("MacBook Air M2", price=1450.0, quantity=100.0),
+        Product("Bose QuietComfort Earbuds", price=250.0, quantity=500.0),
+        Product("Google Pixel 7", price=500.0, quantity=250.0),
     ]
     best_buy = Store(product_list)
 
