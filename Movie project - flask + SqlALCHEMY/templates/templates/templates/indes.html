@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Movie App</h1>
+    {% if current_user.is_authenticated %}
+    <p>Willkommen, {{ current_user.name }}! <a href="{{ url_for('logout') }}">Abmelden</a></p>
+    <ul>
+        <li><a href="{{ url_for('list_users') }}">Benutzer anzeigen</a></li>
+        <li><a href="{{ url_for('add_user') }}">Benutzer hinzufügen</a></li>
+        <li><a href="{{ url_for('generate_website_route') }}">Website generieren</a></li>
+    </ul>
+    {% else %}
+    <p>Bitte melde dich an, um fortzufahren. <a href="{{ url_for('login') }}">Anmelden</a></p>
+    {% endif %}
+</body>
+</html>

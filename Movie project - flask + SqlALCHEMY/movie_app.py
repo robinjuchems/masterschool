@@ -9,10 +9,11 @@ from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, SubmitField, FloatField, IntegerField
 from wtforms.validators import DataRequired, NumberRange
+from movie_storage import list_movies, add_movie, delete_movie, update_movie
 
 # Flask-App initialisieren
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'dein_geheimer_schlüssel'  # Ersetze dies mit einem sicheren Schlüssel
+app: Flask = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secure-random-key-here'  # Ersetze dies mit einem sicheren Schlüssel
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/movies.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -28,7 +29,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # OMDb API-Schlüssel
-OMDB_API_KEY = 'dein_omdb_api_schlüssel'  # Ersetze dies mit deinem API-Schlüssel
+OMDB_API_KEY = 'your-omdb-api-key-here'  # Ersetze dies mit deinem API-Schlüssel
 
 # Benutzermodell mit UserMixin für Flask-Login
 class User(db.Model, UserMixin):
@@ -134,7 +135,7 @@ def fetch_movie_data(title):
                 "year": int(year),
                 "rating": float(rating) if rating and rating != "N/A" else None
             }, None
-        return None, data.get("hackathon", "Film nicht gefunden")
+        return None, data.get("Error", "Film nicht gefunden")
     except requests.RequestException as e:
         return None, f"API-Fehler: {str(e)}"
 
@@ -211,7 +212,7 @@ def add_user():
         name = request.form['name']
         if User.query.filter_by(name=name).first():
             return render_template('add_user.html', error="Benutzername bereits vergeben"), 400
-        new_user = User()
+        new_user = User(name=name)
         new_user.set_password("password")  # Standardpasswort
         try:
             db.session.add(new_user)
@@ -304,14 +305,14 @@ def delete_movie_route(user_id, movie_id):
 @login_required
 def generate_website_route():
     """Generiert die statische Website."""
-    generate_website()
+    result = generate_website()
     return redirect(url_for('list_users'))
 
 # Datenbank erstellen
 with app.app_context():
     db.create_all()
     if not User.query.filter_by(name="admin").first():
-        admin = User()
+        admin = User(name="admin")
         admin.set_password("password")
         db.session.add(admin)
         db.session.commit()

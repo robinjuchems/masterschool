@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Benutzerliste</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Benutzerliste</h1>
+    <a href="{{ url_for('home') }}">Zurück zur Startseite</a>
+    <ul>
+        {% for user in users %}
+        <li><a href="{{ url_for('user_movies', user_id=user.id) }}">{{ user.name }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
