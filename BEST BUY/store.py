@@ -1,85 +1,41 @@
+"""
+Modul für die Store-Klasse im Best Buy Store.
+"""
+
+
 class Store:
-    """A class representing a store that manages a list of products."""
+    """A class representing a store with a list of products."""
 
-    def __init__(self, products):
-        """
-        Initialize the store with a list of products.
-
-        Args:
-            products (list): A list of product objects to manage in the store.
-        """
+    def __init__(self, products: list) -> None:
+        """Initialize the store with a list of products."""
         self.products = products
 
-    def get_total_quantity(self):
-        """Return the total quantity of all products in the store."""
+    def get_total_quantity(self) -> float:
+        """Return the total quantity of all products."""
         return sum(product.get_quantity() for product in self.products)
 
-    def get_all_products(self):
-        """Return the list of all products in the store."""
-        return self.products
+    def get_all_products(self) -> list:
+        """Return a list of all active products."""
+        return [product for product in self.products if product.is_active()]
 
-    def order(self, shopping_list):
-        """
-        Process an order from a shopping list and return the total cost.
-
-        Args:
-            shopping_list (list): List of tuples (product, quantity) representing the order.
-
-        Returns:
-            float: Total cost of the order.
-
-        Raises:
-            ValueError: If any purchase fails (e.g., insufficient stock).
-        """
-        total_cost = 0
-        for product, quantity in shopping_list:
-            try:
-                total_cost += product.buy(quantity)
-            except ValueError as error:
-                raise ValueError(f"Failed to order {product.name}: {error}") from error
+    def order(self, shopping_list: list) -> float:
+        """Process an order and return the total cost."""
+        total_cost = 0.0
+        for product, qty in shopping_list:
+            total_cost += product.buy(qty)
         return total_cost
 
-# Optional: Beispiel zur Verwendung (kann entfernt werden, wenn nicht benötigt)
+    def __str__(self) -> str:
+        """Return a string representation of the store."""
+        return f"Store with {len(self.products)} products"
+
+
 if __name__ == "__main__":
-    # Beispiel-Implementierung einer Product-Klasse zum Testen
-    class Product:
-        def __init__(self, name, price, quantity):
-            self.name = name
-            self.price = price
-            self.quantity = quantity
+    from products import Product
 
-        def get_quantity(self):
-            return self.quantity
-
-        def buy(self, quantity):
-            if quantity > self.quantity:
-                raise ValueError("Not enough stock")
-            self.quantity -= quantity
-            return self.price * quantity
-
-        def __str__(self):
-            return f"{self.name}: ${self.price}, Quantity: {self.quantity}"
-
-    # Beispielprodukte
-    products = [
-        Product("Laptop", 1000, 5),
-        Product("Phone", 500, 10)
+    test_products = [
+        Product("Test Laptop", 1000.0, 10.0),
+        Product("Test Earbuds", 200.0, 5.0),
     ]
-
-    # Store-Instanz erstellen
-    store = Store(products)
-
-    # Test: Alle Produkte ausgeben
-    print("All Products:")
-    for product in store.get_all_products():
-        print(product)
-
-    # Test: Gesamtmenge
-    print(f"Total Quantity: {store.get_total_quantity()}")
-
-    # Test: Bestellung
-    try:
-        cost = store.order([(products[0], 2), (products[1], 3)])
-        print(f"Order Total Cost: ${cost}")
-    except ValueError as e:
-        print(f"Order failed: {e}")
+    test_store = Store(test_products)
+    print(f"Total quantity: {test_store.get_total_quantity():.2f}")
