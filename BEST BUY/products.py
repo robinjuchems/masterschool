@@ -1,39 +1,65 @@
-class Product:
-    """A class representing a product in the store with name, price, and quantity."""
+"""
+Modul für die Produktklasse im Best Buy Store.
+"""
 
-    def __init__(self, name: str, price: float, quantity: int):
+class Product:
+    """Eine Klasse, die ein Produkt im Store repräsentiert."""
+
+    def __init__(self, name: str, price: float, quantity: float) -> None:
+        """Initialisiere ein Produkt mit Name, Preis und Menge."""
         if not name or price < 0 or quantity < 0:
             raise ValueError(
-                "Invalid product attributes: name cannot be empty, "
-                "price and quantity must be non-negative."
+                "Ungültige Attribute: Name darf nicht leer sein, "
+                "Preis und Menge müssen nicht-negativ sein."
             )
         self.name = name
         self.price = price
-        self.quantity = quantity
-        self.active = quantity > 0
+        self.quantity = float(quantity)  # Sicherstellen, dass es ein Float ist
+        self._active = quantity > 0
 
-    def get_quantity(self) -> int:
-        """Return the current quantity of the product."""
+    def get_quantity(self) -> float:
+        """Gibt die aktuelle Menge des Produkts zurück."""
         return self.quantity
 
-    def is_active(self) -> bool:
-        """Return whether the product is active (has stock)."""
-        return self.active
+    def set_quantity(self, qty: float) -> None:
+        """Setzt die Menge und aktualisiert den Aktivstatus."""
+        if qty < 0:
+            raise ValueError("Menge kann nicht negativ sein.")
+        self.quantity = float(qty)
+        self._active = qty > 0
 
-    def buy(self, quantity: int) -> float:
-        """Purchase a specified quantity of the product and return the cost."""
-        if quantity <= 0:
-            raise ValueError("Purchase quantity must be greater than zero.")
-        if quantity > self.quantity:
-            raise ValueError(
-                f"Not enough stock for {self.name}. "
-                f"Available: {self.quantity}, Requested: {quantity}"
-            )
-        self.quantity -= quantity
-        if self.quantity == 0:
-            self.active = False
-        return quantity * self.price
+    def is_active(self) -> bool:
+        """Gibt zurück, ob das Produkt aktiv ist (hat Lagerbestand)."""
+        return self._active
+
+    def activate(self) -> None:
+        """Aktiviert das Produkt, wenn es Lagerbestand hat."""
+        if self.quantity > 0:
+            self._active = True
+
+    def deactivate(self) -> None:
+        """Deaktiviert das Produkt."""
+        self._active = False
+
+    def buy(self, qty: float) -> float:
+        """Kauft eine Menge und gibt die Kosten zurück."""
+        if qty <= 0:
+            raise ValueError("Kaufmenge muss größer als null sein.")
+        if qty > self.quantity:
+            raise ValueError(f"Nicht genug Lagerbestand für {self.name}. Verfügbar: {self.quantity}")
+        self.quantity -= qty
+        if self.quantity <= 0:  # Anpassung für Gleitkommazahlen
+            self._active = False
+        return qty * self.price
 
     def show(self) -> str:
-        """Return a formatted string with product details."""
-        return f"{self.name} - Price: ${self.price:.2f}, Quantity: {self.quantity}"
+        """Gibt eine formatierte Zeichenkette mit Produktdetails zurück."""
+        return f"{self.name} - Preis: ${self.price:.2f}, Menge: {self.quantity:.2f}"
+
+    def __str__(self) -> str:
+        """Gibt eine Zeichenkettendarstellung des Produkts zurück."""
+        return self.show()
+
+if __name__ == "__main__":
+    test_product = Product("Test Item", 10.0, 5.0)
+    print(test_product.show())
