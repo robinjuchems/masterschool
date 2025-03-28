@@ -9,10 +9,32 @@ class Product:
                 "price and quantity must be non-negative."
             )
         self.name = name
-        self.price = price
+        self._price = price
         self.quantity = quantity
-        self.promotion = None
+        self._promotion = None
         self.active = quantity > 0
+
+    @property
+    def price(self) -> float:
+        """Get the price of the product."""
+        return self._price
+
+    @price.setter
+    def price(self, value: float):
+        """Set the price of the product."""
+        if value < 0:
+            raise ValueError("Price cannot be negative.")
+        self._price = value
+
+    @property
+    def promotion(self):
+        """Get the promotion of the product."""
+        return self._promotion
+
+    @promotion.setter
+    def promotion(self, promotion):
+        """Set the promotion of the product."""
+        self._promotion = promotion
 
     def get_quantity(self) -> int:
         """Return the current quantity of the product."""
@@ -46,10 +68,10 @@ class Product:
 
 
 class NonStockedProduct(Product):
-    """A class representing a product with unlimited stock."""
+    """A class representing a non-stocked product with unlimited availability."""
 
     def __init__(self, name: str, price: float):
-        """Initialize a non-stocked product with unlimited quantity."""
+        """Initialize a non-stocked product with zero quantity."""
         super().__init__(name, price, quantity=0)
 
     def get_quantity(self) -> int:
@@ -64,13 +86,20 @@ class NonStockedProduct(Product):
             return self.promotion.apply_promotion(self, quantity)
         return quantity * self.price
 
+    def __str__(self) -> str:
+        """Return a string representation indicating unlimited stock."""
+        promo = f" (Promotion: {self.promotion.name})" if self.promotion else ""
+        return f"{self.name} - Price: ${self.price:.2f}, Quantity: Unlimited{promo}"
+
 
 class LimitedProduct(Product):
-    """A class representing a product with a purchase limit per order."""
+    """A class representing a product with a maximum purchase limit per order."""
 
     def __init__(self, name: str, price: float, quantity: int, maximum: int):
         """Initialize a limited product with a maximum purchase limit."""
         super().__init__(name, price, quantity)
+        if maximum <= 0:
+            raise ValueError("Maximum purchase limit must be greater than zero.")
         self.maximum = maximum
 
     def buy(self, quantity: int) -> float:
@@ -87,3 +116,8 @@ class LimitedProduct(Product):
         if self.promotion:
             return self.promotion.apply_promotion(self, quantity)
         return quantity * self.price
+
+    def __str__(self) -> str:
+        """Return a string representation with maximum limit details."""
+        promo = f" (Promotion: {self.promotion.name})" if self.promotion else ""
+        return f"{self.name} - Price: ${self.price:.2f}, Quantity: {self.quantity}, Max per order: {self.maximum}{promo}"

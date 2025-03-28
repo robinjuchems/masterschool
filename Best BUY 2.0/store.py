@@ -6,8 +6,8 @@ class Store:
         self.products = products
 
     def get_total_quantity(self) -> int:
-        """Return the total quantity of all products (excluding non-stocked)."""
-        return sum(p.get_quantity() for p in self.products if p.get_quantity() != float('inf'))
+        """Return the total quantity of all products."""
+        return sum(product.get_quantity() for product in self.products)
 
     def get_all_products(self):
         """Return the list of all products."""

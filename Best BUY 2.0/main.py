@@ -42,25 +42,46 @@ def handle_order(store):
         print("No items ordered.")
 
 def main():
-    """Initialize and run the Best Buy 2.0 store."""
-    # Initial stock setup
-    mac = Product("MacBook Air M2", price=1450, quantity=100)
-    bose = Product("Bose QuietComfort Earbuds", price=250, quantity=500)
-    pixel = Product("Google Pixel 7", price=500, quantity=250)
-    windows_license = NonStockedProduct("Windows License", price=125)
-    shipping = LimitedProduct("Shipping", price=10, quantity=250, maximum=1)
+    """Initialize and run the Best Buy 2.0 store with all features."""
+    # Setup initial stock of inventory (Schritt 3)
+    product_list = [
+        Product("MacBook Air M2", price=1450, quantity=100),
+        Product("Bose QuietComfort Earbuds", price=250, quantity=500),
+        Product("Google Pixel 7", price=500, quantity=250),
+        NonStockedProduct("Windows License", price=125),  # Schritt 2
+        LimitedProduct("Shipping", price=10, quantity=250, maximum=1)  # Schritt 2
+    ]
 
-    # Promotions
+    # Create promotion catalog (Schritt 3)
     second_half_price = SecondHalfPrice("Second Half Price!")
     third_one_free = ThirdOneFree("Third One Free!")
     thirty_percent = PercentDiscount("30% off!", percent=30)
 
-    mac.promotion = second_half_price
-    bose.promotion = third_one_free
-    windows_license.promotion = thirty_percent
+    # Add promotions to products (Schritt 3)
+    product_list[0].promotion = second_half_price
+    product_list[1].promotion = third_one_free
+    product_list[3].promotion = thirty_percent
 
-    product_list = [mac, bose, pixel, windows_license, shipping]
     best_buy = Store(product_list)
+
+    # Bonus-Schritt: Magic Methods Tests
+    print("\nBonus Tests:")
+    mac = Product("MacBook Air M2", price=1450, quantity=100)
+    bose = Product("Bose QuietComfort Earbuds", price=250, quantity=500)
+    pixel = Product("Google Pixel 7", price=500, quantity=250)
+    try:
+        mac.price = -100  # Sollte Fehler auslösen
+    except ValueError as e:
+        print(f"Error setting negative price: {e}")
+    print(mac)  # Nutzt __str__
+    print(f"mac > bose: {mac > bose}")  # True
+    print(f"mac in best_buy: {mac in best_buy}")  # False (neues Objekt)
+    print(f"pixel in best_buy: {pixel in best_buy}")  # False (neues Objekt)
+
+    store1 = Store([mac, bose])
+    store2 = Store([pixel])
+    combined_store = store1 + store2
+    print(f"Combined store products: {len(combined_store.get_all_products())}")
 
     while True:
         show_menu()
