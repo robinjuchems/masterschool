@@ -7,30 +7,23 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from data_models import db, Author, Book
 
-# Flask-App initialisieren
 app = Flask(__name__)
 
-# Pfade definieren und Verzeichnis sicherstellen
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 DATABASE_PATH = os.path.join(DATA_DIR, 'library.sqlite')
 
-# Flask-Konfiguration mit absolutem Pfad
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.urandom(16)
 
-# Datenbank initialisieren
 db.init_app(app)
 
-# Debugging: Pfad ausgeben
 print(f"Database path: {DATABASE_PATH}")
 
-# Routen
 @app.route('/')
 def index():
-    """Zeigt die Homepage mit Büchern und Autoren, inklusive Suche und Sortierung."""
     search_term = request.args.get('search', '').strip()
     sort_by = request.args.get('sort', 'title')
 
@@ -38,13 +31,16 @@ def index():
     if search_term:
         query = query.filter(
             (Book.title.ilike(f'%{search_term}%')) |
-            (Author.name.ilike(f'%{search_term}%'))
+            (Author.name.ilike(f'%{search_term}%')) |
+            (Book.isbn.ilike(f'%{search_term}%'))
         )
 
     if sort_by == 'title':
         books = query.order_by(Book.title).all()
     elif sort_by == 'author':
         books = query.order_by(Author.name).all()
+    elif sort_by == 'year':
+        books = query.order_by(Book.publication_year).all()
     else:
         books = query.all()
 
@@ -53,12 +49,19 @@ def index():
 
 @app.route('/add', methods=['POST'])
 def add_book():
-    """Fügt ein neues Buch und ggf. einen neuen Autor hinzu."""
     title = request.form.get('title', '').strip()
     author_name = request.form.get('author', '').strip()
+    isbn = request.form.get('isbn', '').strip()
+    publication_year = request.form.get('publication_year', '').strip()
 
-    if not title or not author_name:
-        flash("Titel und Autor sind erforderlich.", "error")
+    if not all([title, author_name, isbn, publication_year]):
+        flash("Titel, Autor, ISBN und Veröffentlichungsjahr sind erforderlich.", "error")
+        return redirect(url_for('index'))
+
+    try:
+        publication_year = int(publication_year)
+    except ValueError:
+        flash("Veröffentlichungsjahr muss eine Zahl sein.", "error")
         return redirect(url_for('index'))
 
     existing_author = Author.query.filter_by(name=author_name).first()
@@ -66,22 +69,22 @@ def add_book():
         existing_author = Author(name=author_name)
         db.session.add(existing_author)
 
-    new_book = Book(title=title, author=existing_author)
+    new_book = Book(title=title, isbn=isbn, publication_year=publication_year, author=existing_author)
     try:
         db.session.add(new_book)
         db.session.commit()
         flash(f"Buch '{title}' hinzugefügt.", "success")
     except IntegrityError:
         db.session.rollback()
-        flash("Fehler beim Hinzufügen: Integritätsverletzung.", "error")
+        flash("Fehler beim Hinzufügen: ISBN bereits vorhanden oder andere Integritätsverletzung.", "error")
     except SQLAlchemyError as e:
         db.session.rollback()
         flash(f"Fehler beim Hinzufügen: {str(e)}", "error")
+
     return redirect(url_for('index'))
 
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 def delete_book(book_id):
-    """Löscht ein Buch und ggf. den Autor."""
     book = Book.query.get_or_404(book_id)
     author = book.author
 
@@ -96,9 +99,16 @@ def delete_book(book_id):
     except SQLAlchemyError as e:
         db.session.rollback()
         flash(f"Fehler beim Löschen: {str(e)}", "error")
+
     return redirect(url_for('index'))
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()  # Erstellt die Tabellen
+        try:
+            db.engine.connect()
+            print("Datenbankverbindung erfolgreich.")
+        except Exception as e:
+            print(f"Datenbankverbindung fehlgeschlagen: {e}")
+            exit(1)
+        db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5002)
